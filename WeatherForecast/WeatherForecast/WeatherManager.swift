@@ -30,12 +30,8 @@ enum WeatherApi {
 }
 
 final class WeatherManager {
-//    static let shared: WeatherManager = WeatherManager()
-    
     private let apiKey: String  = "1c3be24879e17dcc0bd319a5d7afe693"
     weak var delegate: WeatherManagerDelegate?
-    
-//    private init() {}
     
     // TODO: 두 api 공통부분 뽑아내기 resume 하는 부분이나 error 처리 같은 부분
     func getCurrentWeather(latitude: Double, longitude: Double) {
