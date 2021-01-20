@@ -14,6 +14,8 @@ class CurrentWeatherTableViewCell: UITableViewCell {
     @IBOutlet weak var mainTemperatureLabel: UILabel!
     
     override func prepareForReuse() {
+        super.prepareForReuse()
+        
         weatherIconImageView.image = nil
         addressLabel.text = nil
         temperaturesLabel.text = nil

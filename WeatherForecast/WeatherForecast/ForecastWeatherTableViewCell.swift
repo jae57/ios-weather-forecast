@@ -13,6 +13,8 @@ class ForecastWeatherTableViewCell: UITableViewCell {
     @IBOutlet weak var weatherIconImage: UIImageView!
     
     override func prepareForReuse() {
+        super.prepareForReuse()
+        
         datetimeLabel.text = nil
         temperatureLabel.text = nil
         weatherIconImage.image = nil
