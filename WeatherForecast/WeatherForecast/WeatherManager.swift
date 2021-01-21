@@ -65,12 +65,14 @@ final class WeatherManager {
     func getCurrentWeather(latitude: Double, longitude: Double) {
         // TODO: 이름 약간 변경필요 ApiUrls -> ApiserviceX
         guard let url = ApiUrls.currentWeather(latitude, longitude).fullUrl else { return }
-        // get, post 명시적으로 변경
-        print(url)
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             if let data = data {
                 do {
                     let response: Weather = try JSONDecoder().decode(Weather.self, from: data)
+                    // delegate 말고 callback 으로 처리해도 될듯 completion
                     self?.delegate?.setCurrentWeather(response)
                 } catch let error {
                     print(error)
@@ -81,8 +83,9 @@ final class WeatherManager {
     
     func getFivedaysForecastWeathers(latitude: Double, longitude: Double) {
         guard let url = ApiUrls.fiveDaysForecastWeathers(latitude, longitude).fullUrl else { return }
-        print(url)
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
             // response 처리해주거나 안쓸거면 _ 처리 하기
             if let data = data {
                 do {
