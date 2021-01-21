@@ -6,10 +6,12 @@
 import UIKit
 import CoreLocation
 
-struct Coordinate {
-    var latitude: Double
-    var longitude: Double
-}
+// 여기서만 쓸꺼니까 일단 여기에 구현
+//extension {
+//    func currerntApi(self ) {
+//        weatherApiManager()
+//    }
+//}
 
 final class WeatherListViewController: UIViewController {
     @IBOutlet private weak var tableView: UITableView!
@@ -19,27 +21,46 @@ final class WeatherListViewController: UIViewController {
     private let refreshControl: UIRefreshControl = UIRefreshControl()
     private var currentWeather: Weather? {
         didSet {
-            DispatchQueue.main.async { [weak self] in
-                self?.tableView.reloadData()
-            }
+//            DispatchQueue.main.async { [weak self] in
+//                self?.tableView.reloadData()
+//            }
+            print("set currentWeather")
+            isReady += 1
         }
     }
     private var fivedaysForecastWeathers: [Weather] = [] {
         didSet {
-            DispatchQueue.main.async { [weak self] in
-                self?.tableView.reloadData()
-            }
+//            DispatchQueue.main.async { [weak self] in
+//                self?.tableView.reloadData()
+//            }
+            print("set fivedaysForecastWeathers")
+            isReady += 1
         }
     }
     private var currentLocation: Coordinate?
     private var currentAddress: CLPlacemark? {
         didSet {
-            DispatchQueue.main.async { [weak self] in
-                self?.tableView.reloadData()
+            print("set currentAddress")
+            isReady += 1
+//            DispatchQueue.main.async { [weak self] in
+//                self?.tableView.reloadData()
+//            }
+        }
+    }
+    // 변수명 수정 .. api call 다한 후 한번만 UI 업데이트 하는 부분
+    private var isReady: Int = 0 {
+        didSet {
+            if isReady == 3 {
+                DispatchQueue.main.async { [weak self] in
+                    self?.tableView.reloadData()
+                }
             }
         }
     }
+    // location 여러번 업데이트 안하게 하는 flag
+    private var hasLocation: Bool = false
     
+    // TODO - initial 분리
     override func viewDidLoad() {
         super.viewDidLoad()
         weatherManager.delegate = self
@@ -56,6 +77,7 @@ final class WeatherListViewController: UIViewController {
         // coordinate 로 type 하나 만들어서 extension 으로 weather 가져오게 해도 될 듯 ?
         weatherManager.getCurrentWeather(latitude: location.latitude, longitude: location.longitude)
         weatherManager.getFivedaysForecastWeathers(latitude: location.latitude, longitude: location.longitude)
+        
         refreshControl.tintColor = .white
         refreshControl.addTarget(self, action: #selector(refreshCells), for: .valueChanged)
         tableView.refreshControl = refreshControl
@@ -63,8 +85,17 @@ final class WeatherListViewController: UIViewController {
     
     @objc
     private func refreshCells() {
-        refreshControl.endRefreshing()
+        // 여기 좀 정리
+        guard let location = currentLocation else { return }
+        isReady = 0
+        // current location 가져오도록
+        if let cllocation = locationManager.location {
+            getLocationLocaleString(location: cllocation)
+        }
+        weatherManager.getCurrentWeather(latitude: location.latitude, longitude: location.longitude)
+        weatherManager.getFivedaysForecastWeathers(latitude: location.latitude, longitude: location.longitude)
         tableView.reloadData()
+        refreshControl.endRefreshing()
     }
     
     private func getCurrentLocation() {
@@ -86,11 +117,28 @@ extension WeatherListViewController: WeatherManagerDelegate {
 
 extension WeatherListViewController: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard hasLocation == false else { return }
+        
+        // flag 를 넣어서 한번만 새로고칠 수 있도록 하고, 끌어당겨서 새로고침 하는 부분에서 이 역할을 해주기(.refreshCell에서 호출?)
         let lastLocation: CLLocation = locations[locations.count - 1]
+        getLocationLocaleString(location: lastLocation)
+//        let geoCoder: CLGeocoder = CLGeocoder()
+//        let local: Locale = Locale(identifier: "Ko-kr")
+//
+//        geoCoder.reverseGeocodeLocation(lastLocation, preferredLocale: local) { (place, error) in
+//            if let address: [CLPlacemark] = place,
+//               let lastAddress: CLPlacemark = address.last {
+//                self.currentAddress = lastAddress
+//            }
+//        }
+        hasLocation = true
+    }
+    
+    private func getLocationLocaleString(location: CLLocation) {
         let geoCoder: CLGeocoder = CLGeocoder()
         let local: Locale = Locale(identifier: "Ko-kr")
         
-        geoCoder.reverseGeocodeLocation(lastLocation, preferredLocale: local) { (place, error) in
+        geoCoder.reverseGeocodeLocation(location, preferredLocale: local) { (place, error) in
             if let address: [CLPlacemark] = place,
                let lastAddress: CLPlacemark = address.last {
                 self.currentAddress = lastAddress
@@ -112,6 +160,7 @@ extension WeatherListViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.row == 0 {
+            // guard let 이 너무 김 -> 해결방법? -. 옵셔널 처리도 cell 에서 하자. computed property?
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "CurrentWeatherTableViewCell", for: indexPath) as? CurrentWeatherTableViewCell,
                   let weather = currentWeather,
                   let weatherIcon = weather.weatherIcon.first,
@@ -120,6 +169,7 @@ extension WeatherListViewController: UITableViewDataSource {
                   let area = address.administrativeArea,
                   let locality = address.locality else { return .init() }
             
+            // 여기서 직접적으로 넣지 말고 넘겨서 cell 이 넣어주도록 바꾸기
             cell.weatherIconImageView.load(url: iconUrl)
             cell.addressLabel.text = "\(area) \(locality)"
             cell.temperaturesLabel.text = "최저 \(weather.temperature.min.toCelcius())° 최고 \(weather.temperature.max.toCelcius())°"
@@ -137,11 +187,12 @@ extension WeatherListViewController: UITableViewDataSource {
             cell.datetimeLabel.text = weather.dateTime.toFormattedStringDate()
             cell.temperatureLabel.text = "\(weather.temperature.avg.toCelcius())°"
             cell.weatherIconImage.load(url: iconUrl)
-            
+            //weather.temperature.avg.celcius
             return cell
         }
     }
     
+    // image 에다가 줘
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if indexPath.row == 0 {
             return 120
@@ -152,6 +203,13 @@ extension WeatherListViewController: UITableViewDataSource {
 }
 
 extension Double {
+    // 이렇게도 고민 해보기
+    var celcius: Double {
+        let celcius: Double = self - 273.15
+        
+        return floor(celcius * 10) / 10
+    }
+    
     func toCelcius() -> Double {
         let celcius: Double = self - 273.15
         
@@ -182,3 +240,5 @@ extension UIImageView {
         }
     }
 }
+
+// TDD 만들기

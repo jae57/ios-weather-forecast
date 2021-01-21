@@ -8,6 +8,7 @@
 import UIKit
 
 class CurrentWeatherTableViewCell: UITableViewCell {
+    // private 바꾸기
     @IBOutlet weak var weatherIconImageView: UIImageView!
     @IBOutlet weak var addressLabel: UILabel!
     @IBOutlet weak var temperaturesLabel: UILabel!

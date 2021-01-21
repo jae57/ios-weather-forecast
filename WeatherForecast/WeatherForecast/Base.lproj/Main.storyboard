@@ -74,6 +74,7 @@
                                             </constraints>
                                         </tableViewCellContentView>
                                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <inset key="separatorInset" minX="50000000" minY="0.0" maxX="0.0" maxY="0.0"/>
                                         <connections>
                                             <outlet property="addressLabel" destination="hGu-O6-zvZ" id="Fxq-3J-1tZ"/>
                                             <outlet property="mainTemperatureLabel" destination="0gn-Xt-p86" id="5Xw-hP-JiJ"/>
