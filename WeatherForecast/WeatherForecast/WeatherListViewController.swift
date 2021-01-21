@@ -160,35 +160,16 @@ extension WeatherListViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.row == 0 {
-            // guard let 이 너무 김 -> 해결방법? -. 옵셔널 처리도 cell 에서 하자. computed property?
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: "CurrentWeatherTableViewCell", for: indexPath) as? CurrentWeatherTableViewCell,
-                  let weather = currentWeather,
-                  let mainWeather = weather.main.first,
-                  let iconUrl = weatherManager.getWeatherIconImageUrl(id: mainWeather.iconId),
-                  let address = currentAddress,
-                  let area = address.administrativeArea,
-                  let locality = address.locality else { return .init() }
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: "CurrentWeatherTableViewCell", for: indexPath) as? CurrentWeatherTableViewCell else { return .init() }
             
-            // 여기서 직접적으로 넣지 말고 넘겨서 cell 이 넣어주도록 바꾸기
-            cell.weatherIconImageView.load(url: iconUrl)
-            cell.addressLabel.text = "\(area) \(locality)"
-            cell.temperaturesLabel.text = "최저 \(weather.temperature.min.toCelcius())° 최고 \(weather.temperature.max.toCelcius())°"
-            cell.mainTemperatureLabel.text = "\(weather.temperature.avg.toCelcius())°"
-            
+            cell.model = currentWeather
+            cell.addressModel = currentAddress
             return cell
         } else {
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "ForecastWeatherTableViewCell", for: indexPath) as? ForecastWeatherTableViewCell else { return .init() }
-            let weather = fivedaysForecastWeathers[indexPath.row - 1]
             
-            guard let mainWeather = weather.main.first,
-                  let iconUrl = weatherManager.getWeatherIconImageUrl(id: mainWeather.iconId) else {
-                return .init()
-            }
+            cell.model = fivedaysForecastWeathers[indexPath.row - 1]
             
-            cell.datetimeLabel.text = weather.dateTime.toFormattedStringDate()
-            cell.temperatureLabel.text = "\(weather.temperature.avg.toCelcius())°"
-            cell.weatherIconImage.load(url: iconUrl)
-            //weather.temperature.avg.celcius
             return cell
         }
     }
@@ -204,14 +185,7 @@ extension WeatherListViewController: UITableViewDataSource {
 }
 
 extension Double {
-    // 이렇게도 고민 해보기
     var celcius: Double {
-        let celcius: Double = self - 273.15
-        
-        return floor(celcius * 10) / 10
-    }
-    
-    func toCelcius() -> Double {
         let celcius: Double = self - 273.15
         
         return floor(celcius * 10) / 10
