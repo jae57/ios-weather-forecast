@@ -163,8 +163,8 @@ extension WeatherListViewController: UITableViewDataSource {
             // guard let 이 너무 김 -> 해결방법? -. 옵셔널 처리도 cell 에서 하자. computed property?
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "CurrentWeatherTableViewCell", for: indexPath) as? CurrentWeatherTableViewCell,
                   let weather = currentWeather,
-                  let weatherIcon = weather.weatherIcon.first,
-                  let iconUrl = weatherManager.getWeatherIconImageUrl(id: weatherIcon.id),
+                  let mainWeather = weather.main.first,
+                  let iconUrl = weatherManager.getWeatherIconImageUrl(id: mainWeather.iconId),
                   let address = currentAddress,
                   let area = address.administrativeArea,
                   let locality = address.locality else { return .init() }
@@ -179,8 +179,9 @@ extension WeatherListViewController: UITableViewDataSource {
         } else {
             guard let cell = tableView.dequeueReusableCell(withIdentifier: "ForecastWeatherTableViewCell", for: indexPath) as? ForecastWeatherTableViewCell else { return .init() }
             let weather = fivedaysForecastWeathers[indexPath.row - 1]
-            guard let weatherIcon = weather.weatherIcon.first,
-                  let iconUrl = weatherManager.getWeatherIconImageUrl(id: weatherIcon.id) else {
+            
+            guard let mainWeather = weather.main.first,
+                  let iconUrl = weatherManager.getWeatherIconImageUrl(id: mainWeather.iconId) else {
                 return .init()
             }
             

@@ -24,12 +24,12 @@ struct FivedaysForecastWeathers: Decodable {
 struct Weather: Decodable {
     var dateTime: Int
     var temperature: Temperature
-    var weatherIcon: [WeatherIcon]
+    var main: [MainWeather]
     
     enum CodingKeys: String, CodingKey {
         case dateTime = "dt"
         case temperature = "main"
-        case weatherIcon = "weather"
+        case main = "weather"
     }
 }
 
@@ -45,12 +45,14 @@ struct Temperature: Decodable {
     }
 }
 
-struct WeatherIcon: Decodable {
-    var id: String
+struct MainWeather: Decodable {
+    var iconId: String
+    var group: String
+    var condition: String
     
     enum CodingKeys: String, CodingKey {
-        case id = "icon"
+        case iconId = "icon"
+        case group = "main"
+        case condition = "description"
     }
 }
-
-
