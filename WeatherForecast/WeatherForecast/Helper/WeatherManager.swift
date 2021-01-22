@@ -7,13 +7,8 @@
 
 import Foundation
 
-protocol WeatherManagerDelegate: AnyObject {
-    func setCurrentWeather(_ response: Weather)
-    func setFiveDaysForecastWeathers(_ response: FivedaysForecastWeathers)
-}
-
-final class WeatherManager {
-    private enum ApiUrls {
+struct WeatherManager {
+    private enum ServiceApi {
         case currentWeather(Double, Double)
         case fiveDaysForecastWeathers(Double, Double)
         case weatherIconImage(String)
@@ -58,22 +53,19 @@ final class WeatherManager {
         }
     }
     
-    weak var delegate: WeatherManagerDelegate?
+    static let shared = WeatherManager()
+    private init() {}
     
-    // TODO: 두 api 공통부분 뽑아내기 resume 하는 부분이나 error 처리 같은 부분
-    // Coordinate 던지기
-    func getCurrentWeather(latitude: Double, longitude: Double) {
-        // TODO: 이름 약간 변경필요 ApiUrls -> ApiserviceX
-        guard let url = ApiUrls.currentWeather(latitude, longitude).fullUrl else { return }
+    func getCurrentWeather(of coordinate: Coordinate, completion: @escaping (Weather) -> Void) {
+        guard let url = ServiceApi.currentWeather(coordinate.latitude, coordinate.longitude).fullUrl else { return }
         
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+        URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data {
                 do {
                     let response: Weather = try JSONDecoder().decode(Weather.self, from: data)
-                    // delegate 말고 callback 으로 처리해도 될듯 completion
-                    self?.delegate?.setCurrentWeather(response)
+                    completion(response)
                 } catch let error {
                     print(error)
                 }
@@ -81,24 +73,29 @@ final class WeatherManager {
         }.resume()
     }
     
-    func getFivedaysForecastWeathers(latitude: Double, longitude: Double) {
-        guard let url = ApiUrls.fiveDaysForecastWeathers(latitude, longitude).fullUrl else { return }
+    func getFivedaysForecastWeathers(of coordinate: Coordinate, completion: @escaping ([Weather]) -> Void) {
+        guard let url = ServiceApi.fiveDaysForecastWeathers(coordinate.latitude, coordinate.longitude).fullUrl else { return }
+        
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            // response 처리해주거나 안쓸거면 _ 처리 하기
+        URLSession.shared.dataTask(with: request) { data, response, error in
             if let data = data {
                 do {
                     let response: FivedaysForecastWeathers = try JSONDecoder().decode(FivedaysForecastWeathers.self, from: data)
-                    self?.delegate?.setFiveDaysForecastWeathers(response)
+                    completion(response.weathers)
                 } catch let error {
-                    print(error)
+                    print(error.localizedDescription)
                 }
             }
         }.resume()
     }
     
-    func getWeatherIconImageUrl(id: String) -> URL? {
-        return ApiUrls.weatherIconImage(id).fullUrl
+    func getWeatherImage(id: String, completion: @escaping (Data) -> Void) {
+        guard let url = ServiceApi.weatherIconImage(id).fullUrl else { return }
+        
+        DispatchQueue.global().async {
+            guard let data = try? Data(contentsOf: url) else { return }
+            completion(data)
+        }
     }
 }
