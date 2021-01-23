@@ -8,11 +8,8 @@
 import UIKit
 
 class ForecastWeatherTableViewCell: UITableViewCell {
-    var model: Weather? {
-        didSet {
-            setValues()
-        }
-    }
+    private var model: Weather?
+    private var index: Int?
     
     @IBOutlet private weak var datetimeLabel: UILabel!
     @IBOutlet private weak var temperatureLabel: UILabel!
@@ -26,19 +23,23 @@ class ForecastWeatherTableViewCell: UITableViewCell {
         weatherIconImageView.image = nil
     }
     
-    private func setValues() {
+    func setModel(_ model: Weather, index: Int) {
+        self.model = model
+        self.index = index
+        setUI()
+    }
+    
+    private func setUI() {
         guard let weather = model,
-              let mainWeather = weather.main.first else { return }
+              let mainWeather = weather.main.first,
+              let index = index else { return }
         
         datetimeLabel.text = weather.dateTime.toFormattedStringDate()
         temperatureLabel.text = "\(weather.temperature.avg.celcius)°"
         
-        WeatherManager.shared.getWeatherImage(id: mainWeather.iconId) {
-            guard let image = UIImage(data: $0) else { return }
-            
-            DispatchQueue.main.async {
-                self.weatherIconImageView.image = image
-            }
+        WeatherManager.shared.getWeatherImage(id: mainWeather.iconId, index: index) { [weak self] image, index in
+            guard index == self?.index else { return }
+            self?.weatherIconImageView.image = image
         }
     }
 }
@@ -49,7 +50,8 @@ extension Int {
         
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "MM/dd(E) HH시"
-        dateFormatter.locale = Locale(identifier: "ko")
+        dateFormatter.timeZone = .autoupdatingCurrent
+        dateFormatter.locale = .autoupdatingCurrent
         
         return dateFormatter.string(from: date)
     }

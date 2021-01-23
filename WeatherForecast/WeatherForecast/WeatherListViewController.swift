@@ -30,7 +30,8 @@ final class WeatherListViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.refreshControl = refreshControl
-        setUp()
+        NotificationCenter.default.addObserver(self, selector: #selector(setUp), name: Notification.Name.locationUpdate, object: nil)
+        LocationManager.shared.updateLocation()
     }
     
     @objc private func refreshUI() {
@@ -42,10 +43,9 @@ final class WeatherListViewController: UIViewController {
 }
 
 extension WeatherListViewController {
-    private func setUp() {
+    @objc private func setUp() {
         guard let coordinate = LocationManager.shared.locationCoordinate else { return }
         LocationManager.shared.getLocalizationString(in: "Ko-kr") { (locationString) in
-            print(locationString)
             DispatchQueue.main.async {
                 self.addressLabel.text = locationString
             }
@@ -67,12 +67,8 @@ extension WeatherListViewController {
         temperaturesLabel.text = "최저 \(weather.temperature.min.celcius)° 최고 \(weather.temperature.max.celcius)°"
         mainTemperatureLabel.text = "\(weather.temperature.avg.celcius)°"
         
-        WeatherManager.shared.getWeatherImage(id: mainWeather.iconId) {
-            guard let image = UIImage(data: $0) else { return }
-            
-            DispatchQueue.main.async {
-                self.weatherIconImageView.image = image
-            }
+        WeatherManager.shared.getWeatherImage(id: mainWeather.iconId) { [weak self] image, _ in
+            self?.weatherIconImageView.image = image
         }
     }
 }
@@ -85,7 +81,7 @@ extension WeatherListViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "ForecastWeatherTableViewCell", for: indexPath) as? ForecastWeatherTableViewCell else { return .init() }
         
-        cell.model = fivedaysForecastWeathers[indexPath.row]
+        cell.setModel(fivedaysForecastWeathers[indexPath.row], index: indexPath.row)
         
         return cell
     }

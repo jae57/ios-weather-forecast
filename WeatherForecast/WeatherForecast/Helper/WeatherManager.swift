@@ -5,7 +5,7 @@
 //  Created by 김지혜 on 2021/01/19.
 //
 
-import Foundation
+import UIKit
 
 struct WeatherManager {
     private enum ServiceApi {
@@ -90,12 +90,22 @@ struct WeatherManager {
         }.resume()
     }
     
-    func getWeatherImage(id: String, completion: @escaping (Data) -> Void) {
+    func getWeatherImage(id: String, index: Int? = nil, completion: @escaping (UIImage, Int?) -> Void) {
         guard let url = ServiceApi.weatherIconImage(id).fullUrl else { return }
         
+        if let image = ImageCache.shared[url] {
+            completion(image, index)
+            return
+        }
+        
         DispatchQueue.global().async {
-            guard let data = try? Data(contentsOf: url) else { return }
-            completion(data)
+            guard let data = try? Data(contentsOf: url),
+                  let image = UIImage(data: data) else { return }
+            
+            ImageCache.shared[url] = image
+            DispatchQueue.main.async {
+                completion(image, index)
+            }
         }
     }
 }
